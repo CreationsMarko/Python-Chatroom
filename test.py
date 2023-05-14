@@ -1,11 +1,10 @@
-from pcr.common.packets import UserInitPacket
+from pcr.client import Client
 
-uip = UserInitPacket('test', 'foo')
+class ClientCLI(Client):
 
-print(uip)
+    def start(self):
+        self.set_username("test_account")
+        self.leave()
+        exit()
 
-en = uip.encode()
-
-new_uip = UserInitPacket.decode(en)
-
-print(new_uip)
+ClientCLI().connect('127.0.0.1', 7077)

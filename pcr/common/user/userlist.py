@@ -46,3 +46,11 @@ class UserList:
         if fallback != Nothing:
             return fallback
         raise KeyError(f"Could not find a user with the connection '{connection}'")
+
+    def from_private_key(self, private_key, fallback):
+        for user in self.users:
+            if user.private_key == private_key:
+                return user
+        if fallback != Nothing:
+            return fallback
+        raise KeyError(f"Could not find a user with the key '{private_key}'")

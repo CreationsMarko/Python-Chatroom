@@ -1,11 +1,11 @@
 from socket import socket
-import multiprocessing
+from threading import Thread
 
 from cryptography.fernet import Fernet
 
 from ..common.user import User
 from ..common.user.userlist import UserList
-from ..common.packets import Packet, UserJoinPacket, UserMessagePacket, UserInitPacket
+from ..common.packets import Packet, UserJoinPacket, UserMessagePacket, UserInitPacket, UserLeavePacket
 
 class MessageTooLongError(Exception):
     pass
@@ -33,9 +33,9 @@ class Client:
     ):
         self.server.connect((host, port))
 
-        process = multiprocessing.Process(
+        process = Thread(
             target=self.packet_handler, args=(self.server,))
-        process.daemon = True
+        #process.daemon = True
         process.start()
 
         self.start()
@@ -47,6 +47,8 @@ class Client:
         while True:
             raw_packet = connection.recv(1024)
             packet = Packet.guess_packet(raw_packet)
+
+            print(packet.type)
 
             if packet.type == 'user_init':
                 self._initialize_self(packet)
@@ -70,6 +72,16 @@ class Client:
 
         self.users.add(user)
 
+        self.join_message(user.name)
+
+    def _remove_user(self, data: UserLeavePacket):
+
+        user = self.users.from_username(data.username)
+
+        self.users.remove(user)
+
+        self.leave_message(user.name)
+
     def _process_message(self, data: UserMessagePacket):
 
         user = self.users.from_username(data.username)
@@ -77,11 +89,6 @@ class Client:
         decoded_message = Fernet(user.public_key.encode()).decrypt(message)
 
         self.process_message(user.name, decoded_message.decode())
-
-    def await_messages(self):
-        while True:
-            message = self.server.recv(1024).decode('utf-8')
-            self.process_message(message)
 
 
     def set_username(self, username):
@@ -97,6 +104,12 @@ class Client:
 
     def start(self):
         pass
+
+    def leave(self):
+        if not hasattr(self, 'username'):
+            return
+        message_packet = UserLeavePacket(self.username, self.private_key.decode())
+        self.server.send(message_packet.encode())
 
     def send_message(self, message: str):
         """

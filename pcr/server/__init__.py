@@ -34,8 +34,16 @@ class Server:
     def packet_handler(self, connection):
 
         while True:
-            raw_packet = connection.recv(1024)
+            try:
+                raw_packet = connection.recv(1024)
+            except ConnectionResetError:
+                continue
+            if not raw_packet:
+                continue
+
             packet = Packet.guess_packet(raw_packet)
+            if not packet:
+                continue
 
             if packet.type == 'user_join':
                 self._initialize_user(connection, packet)
@@ -78,16 +86,18 @@ class Server:
 
         print(f"User '{data.username}' sent a message")
 
-        print(self.users.users)
         for user in self.users.users:
             if user.name != data.username:
-                print(user.name, 'got the message')
                 user.send(data.encode())
 
     def _remove_user(self, data):
 
-        user = self.users.from_username(data.username)
+        user = self.users.from_private_key(data.private_key, None)
+        if not user:
+            return
+
+        print(f"User '{user.name}' disconnected")
 
         self.users.remove(user)
 
-        self.users.send(UserJoinPacket(user.raw()).encode())
+        self.users.send(UserLeavePacket(user.name).encode())

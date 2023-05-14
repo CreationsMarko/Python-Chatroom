@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from json import dumps, loads
+from json import dumps, loads, JSONDecodeError
 from typing import List
 
 from .user import User
@@ -22,7 +22,10 @@ class Packet:
     @classmethod
     def guess_packet(cls, data):
         json = data.decode()
-        data = loads(json)
+        try:
+            data = loads(json)
+        except JSONDecodeError:
+            return None
         packet_class = packets[data['type']]
         return packet_class(**data)
 
@@ -44,6 +47,7 @@ class UserJoinPacket(Packet):
 class UserLeavePacket(Packet):
 
     username: str
+    private_key: str = ''
 
     type: str = 'user_leave'
 
