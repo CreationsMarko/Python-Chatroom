@@ -54,6 +54,7 @@ class ClientGUI(Client):
         chat_label.pack(padx=20, pady=5)
 
         self.text_area = scrolledtext.ScrolledText(window)
+        self.text_area.configure(state="disabled")
         self.text_area.pack(padx=20, pady=5)
 
         msg_label = Label(window, text="Message: ", bg="lightgray")
@@ -100,11 +101,15 @@ class ClientGUI(Client):
         self.print_message(f"{username} left the chatroom.")
 
     def print_message(self, message: str):
+        self.text_area.configure(state="normal")
         self.text_area.insert(END, message.strip().rstrip()+'\n')
+        self.text_area.configure(state="disabled")
 
     def write_message(self, *_):
         raw_message = self.input_area.get("1.0", "end")
         message = str(raw_message).strip().rstrip()
+        if (message == ""):
+            return
         self.send_message(message)
         self.input_area.delete("1.0", "end")
     
