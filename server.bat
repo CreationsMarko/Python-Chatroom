@@ -1,0 +1,1 @@
+python -m pcr.server -f cli

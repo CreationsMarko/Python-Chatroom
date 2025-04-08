@@ -1,0 +1,1 @@
+python -m pcr.client -f gui
